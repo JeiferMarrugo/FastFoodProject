@@ -1,10 +1,10 @@
 // app/profile/page.tsx (Server Component)
-import { createServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import ProfileClient from "./profile-client"
 
 export default async function ProfilePage() {
-  const supabase = createServerClient()
+  const supabase = await createClient()
 
   const {
     data: { user },
