@@ -1,26 +1,41 @@
-import { createServerClient } from "@supabase/ssr"
+// /lib/supabase/server.ts
+
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
 export async function createClient() {
-  const cookieStore = await cookies()
+  // 1. Obtiene la tienda de cookies de Next.js
+  const cookieStore = cookies()
 
-  console.log("🍪 Cookies detectadas en el server:", cookieStore.getAll())
+  // Nota: La línea console.log("🍪 Cookies detectadas...") es buena para depuración, 
+  // pero el método 'getAll' dentro del createServerClient es el que debe cambiar.
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        // 2. CORRECCIÓN: Usar el método 'get(name)' para que Supabase pueda 
+        // buscar específicamente las cookies de sesión (ej: 'sb-access-token').
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        setAll(cookiesToSet) {
+        // 3. (Opcional pero recomendable) Implementar 'set' para renovaciones de tokens.
+        // Se envuelve en try/catch porque la escritura de cookies en Server Components
+        // no siempre es posible si la respuesta ya comenzó a transmitirse.
+        set(name: string, value: string, options: CookieOptions) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
+            cookieStore.set({ name, value, ...options })
           } catch {
-            // ignora en edge/runtime sin cookies escribibles
+            // No hacer nada, no hay cookies escribibles en un Server Component.
+          }
+        },
+        // 4. (Opcional) Implementar 'remove'.
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch {
+            // No hacer nada, no hay cookies escribibles en un Server Component.
           }
         },
       },
