@@ -97,15 +97,6 @@ export default function CartPage() {
   }
 
   const handleCheckout = async () => {
-    if (!user) {
-      toast({
-        title: "Sesión requerida",
-        description: "Debes iniciar sesión para hacer un pedido",
-        variant: "destructive",
-      })
-      router.push("/auth/login")
-      return
-    }
 
     if (cart.items.length === 0) {
       toast({
